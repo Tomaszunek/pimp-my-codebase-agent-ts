@@ -1,5 +1,6 @@
-import { isKnownCommand } from "./commands.js";
 import type { CliDebugInfo, CliResult, OutputFormat, ParsedCli } from "./types.js";
+
+import { isKnownCommand } from "./commands.js";
 
 export function createResult(parsed: ParsedCli, debugInfo: CliDebugInfo): CliResult {
   if (parsed.errors.length > 0) {
