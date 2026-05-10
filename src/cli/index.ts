@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 
-import { createDebugInfo } from "./debugInfo.js";
+import { createDebugInfo } from "./debug-info.js";
 import { printHelp } from "./help.js";
-import { parseArgs } from "./parseArgs.js";
+import { parseArguments } from "./parse-arguments.js";
 import { createResult, printResult } from "./results.js";
 
 function main(argv: string[]): void {
-  const parsed = parseArgs(argv);
+  const parsed = parseArguments(argv);
   const debugInfo = createDebugInfo(argv, parsed);
 
-  if (parsed.help || !parsed.command) {
+  if (parsed.help || parsed.command === undefined || parsed.command.length === 0) {
     printHelp();
     return;
   }

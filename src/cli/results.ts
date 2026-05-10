@@ -15,7 +15,7 @@ export function createResult(parsed: ParsedCli, debugInfo: CliDebugInfo): CliRes
     return result;
   }
 
-  if (!parsed.command) {
+  if (parsed.command === undefined || parsed.command.length === 0) {
     return {
       status: "ok",
       message: "Help printed."
@@ -44,7 +44,7 @@ export function createResult(parsed: ParsedCli, debugInfo: CliDebugInfo): CliRes
       data: debugInfo
     };
 
-    if (parsed.repoPath) {
+    if (parsed.repoPath !== undefined && parsed.repoPath.length > 0) {
       result.repoPath = parsed.repoPath;
     }
 
@@ -57,7 +57,7 @@ export function createResult(parsed: ParsedCli, debugInfo: CliDebugInfo): CliRes
     message: `Command '${parsed.command}' is scaffolded but not implemented yet.`
   };
 
-  if (parsed.repoPath) {
+  if (parsed.repoPath !== undefined && parsed.repoPath.length > 0) {
     result.repoPath = parsed.repoPath;
   }
 
@@ -70,12 +70,12 @@ export function createResult(parsed: ParsedCli, debugInfo: CliDebugInfo): CliRes
 
 export function printResult(result: CliResult, format: OutputFormat): void {
   if (format === "json") {
-    console.log(JSON.stringify(result, null, 2));
+    console.log(JSON.stringify(result, undefined, 2));
     return;
   }
 
   if (result.debug) {
-    console.error(`[debug] ${JSON.stringify(result.debug, null, 2)}`);
+    console.error(`[debug] ${JSON.stringify(result.debug, undefined, 2)}`);
   }
 
   if (result.status === "error") {
@@ -86,7 +86,7 @@ export function printResult(result: CliResult, format: OutputFormat): void {
 
   console.log(result.message);
 
-  if (result.command === "debug" && result.data) {
-    console.log(JSON.stringify(result.data, null, 2));
+  if (result.command === "debug" && result.data !== undefined) {
+    console.log(JSON.stringify(result.data, undefined, 2));
   }
 }

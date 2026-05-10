@@ -11,13 +11,20 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "node --experimental-strip-types src/cli/index.ts",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "start": "node dist/cli/index.js",
     "pimp": "node dist/cli/index.js",
     "test": "node --test"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^24.10.1",
-    "typescript": "^5.9.3"
+    "eslint": "^10.3.0",
+    "eslint-plugin-unicorn": "^64.0.0",
+    "globals": "^17.6.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.59.2"
   },
   "engines": {
     "node": ">=22.18.0"

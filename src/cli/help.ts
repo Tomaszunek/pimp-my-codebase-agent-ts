@@ -1,5 +1,7 @@
 import { commandDescriptions } from "./commands.js";
 
+const commandNameColumnWidth = 8;
+
 export function printHelp(): void {
   console.log(`Pimp My Codebase Agent
 
@@ -7,7 +9,7 @@ Usage:
   pimp-my-codebase <command> --repo <path> [options]
 
 Commands:
-${commandDescriptions.map(([name, description]) => `  ${name.padEnd(8)} ${description}`).join("\n")}
+${commandDescriptions.map(([name, description]) => `  ${name.padEnd(commandNameColumnWidth)} ${description}`).join("\n")}
 
 Options:
   --repo <path>       Repository path.
