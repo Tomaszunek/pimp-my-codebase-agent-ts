@@ -119,7 +119,7 @@ void describe("createResult", () => {
     assert.equal(result.message, "Invalid format 'xml'. Use 'text' or 'json'.");
   });
 
-  void it("persists plan inventory, findings, and improvement plan artifacts", async () => {
+  void it("persists plan inventory, findings, improvement plan, and report artifacts", async () => {
     const fixtureRoot = await createFixture([
       {
         content: JSON.stringify({
@@ -143,6 +143,8 @@ void describe("createResult", () => {
       const findings = requireRecord(data.findings);
       const plan = requireRecord(data.plan);
       const planSummary = requireRecord(plan.summary);
+      const report = requireRecord(data.report);
+      const reportSummary = requireRecord(report.summary);
       const summary = requireRecord(findings.summary);
       const run = requireRecord(data.run);
       const artifacts = requireRecord(run.artifacts);
@@ -150,22 +152,28 @@ void describe("createResult", () => {
       const findingsPath = requireString(artifacts.findings);
       const inventoryPath = requireString(artifacts.inventory);
       const planPath = requireString(artifacts.plan);
+      const reportPath = requireString(artifacts.report);
       const latestFindingsPath = requireString(latestArtifacts.findings);
       const latestInventoryPath = requireString(latestArtifacts.inventory);
       const latestPlanPath = requireString(latestArtifacts.plan);
+      const latestReportPath = requireString(latestArtifacts.report);
 
       assert.equal(result.status, "ok");
       assert.equal(result.command, "plan");
-      assert.equal(result.message, "Project inventory, findings, and improvement plan created.");
+      assert.equal(result.message, "Project inventory, findings, improvement plan, and report created.");
       assert.ok(requireNumber(summary.total) > 0);
       assert.ok(requireNumber(planSummary.total) > 0);
+      assert.ok(requireNumber(reportSummary.findingCount) > 0);
       assert.equal(path.dirname(requireString(run.path)), path.join(fixtureRoot, ".pimp-my-codebase", "runs"));
       assert.match(await readUtf8File(findingsPath), /"title": "Package manifest is missing guard scripts"/u);
       assert.match(await readUtf8File(inventoryPath), /"name": "result-fixture"/u);
       assert.match(await readUtf8File(planPath), /"status": "proposed"/u);
+      assert.match(await readUtf8File(reportPath), /^# Pimp My Codebase Report/u);
+      assert.match(await readUtf8File(reportPath), /## Prioritized Plan/u);
       assert.match(await readUtf8File(latestFindingsPath), /"title": "Package manifest is missing guard scripts"/u);
       assert.match(await readUtf8File(latestInventoryPath), /"name": "result-fixture"/u);
       assert.match(await readUtf8File(latestPlanPath), /"status": "proposed"/u);
+      assert.match(await readUtf8File(latestReportPath), /^# Pimp My Codebase Report/u);
     } finally {
       await removeFixture(fixtureRoot);
     }

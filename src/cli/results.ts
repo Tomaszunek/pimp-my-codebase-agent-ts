@@ -7,9 +7,10 @@ import type {
 
 import { analyzeProject } from "../analysis/index.js";
 import { loadProjectConfig } from "../config/index.js";
-import { createRun, writeJsonArtifact } from "../persistence/index.js";
+import { createRun, writeJsonArtifact, writeTextArtifact } from "../persistence/index.js";
 import { createImprovementPlan } from "../planning/index.js";
 import { scanProject } from "../project/index.js";
+import { createMarkdownReport } from "../reporting/index.js";
 import { isKnownCommand } from "./commands.js";
 
 export async function createResult(
@@ -121,6 +122,20 @@ export async function createResult(
       run: persistedRun,
       value: planArtifact
     });
+    const reportArtifact = createMarkdownReport({
+      config: configLoadResult.config,
+      configLoadResult,
+      findingsArtifact,
+      inventory,
+      planArtifact,
+      run: persistedRun.run
+    });
+
+    await writeTextArtifact({
+      artifactName: "report",
+      run: persistedRun,
+      value: reportArtifact.markdown
+    });
 
     const result: CliResult = {
       status: "ok",
@@ -134,6 +149,12 @@ export async function createResult(
         findings: findingsArtifact,
         inventory,
         plan: planArtifact,
+        report: {
+          latestPath: persistedRun.latestArtifacts.report,
+          path: persistedRun.artifacts.report,
+          summary: reportArtifact.summary,
+          runId: reportArtifact.runId
+        },
         run: {
           artifacts: persistedRun.artifacts,
           id: persistedRun.run.id,
@@ -142,7 +163,7 @@ export async function createResult(
           path: persistedRun.runPath
         }
       },
-      message: "Project inventory, findings, and improvement plan created.",
+      message: "Project inventory, findings, improvement plan, and report created.",
       repoPath,
     };
 
