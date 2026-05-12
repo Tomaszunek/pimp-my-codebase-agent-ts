@@ -9,13 +9,16 @@
     "pimp-my-codebase": "./dist/cli/index.js"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "npm run clean && tsc -p tsconfig.build.json",
+    "build:test": "npm run clean:test && tsc -p tsconfig.test.json",
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
+    "clean:test": "node -e \"require('node:fs').rmSync('.test-dist',{recursive:true,force:true})\"",
     "dev": "node --experimental-strip-types src/cli/index.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "pimp": "node dist/cli/index.js",
     "start": "node dist/cli/index.js",
-    "test": "npm run build && node dist/cli/cli.test.js"
+    "test": "npm run build && npm run build:test && node .test-dist/test-runner.js"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
