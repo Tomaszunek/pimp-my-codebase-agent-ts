@@ -8,6 +8,7 @@ import type {
 import { analyzeProject } from "../analysis/index.js";
 import { loadProjectConfig } from "../config/index.js";
 import { createRun, writeJsonArtifact } from "../persistence/index.js";
+import { createImprovementPlan } from "../planning/index.js";
 import { scanProject } from "../project/index.js";
 import { isKnownCommand } from "./commands.js";
 
@@ -109,6 +110,17 @@ export async function createResult(
       run: persistedRun,
       value: findingsArtifact
     });
+    const planArtifact = createImprovementPlan({
+      createdAt: new Date(persistedRun.run.startedAt),
+      findings: findingsArtifact.findings,
+      runId: persistedRun.run.id
+    });
+
+    await writeJsonArtifact({
+      artifactName: "plan",
+      run: persistedRun,
+      value: planArtifact
+    });
 
     const result: CliResult = {
       status: "ok",
@@ -121,6 +133,7 @@ export async function createResult(
         },
         findings: findingsArtifact,
         inventory,
+        plan: planArtifact,
         run: {
           artifacts: persistedRun.artifacts,
           id: persistedRun.run.id,
@@ -129,7 +142,7 @@ export async function createResult(
           path: persistedRun.runPath
         }
       },
-      message: "Project inventory and deterministic findings created.",
+      message: "Project inventory, findings, and improvement plan created.",
       repoPath,
     };
 
