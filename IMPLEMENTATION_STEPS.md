@@ -396,9 +396,9 @@ Done when:
 ## First Milestone Checklist
 
 - [x] TypeScript CLI skeleton exists.
-- [ ] `pimp-my-codebase plan --repo ../logo` works.
-- [ ] pnpm frontend project detection works.
-- [ ] privacy-safe scanner skips forbidden files.
+- [x] `pimp-my-codebase plan --repo ../logo` works.
+- [x] pnpm frontend project detection works.
+- [x] privacy-safe scanner skips forbidden files.
 - [ ] deterministic analyzers produce findings.
 - [ ] `plan.json` is saved.
 - [ ] `report.md` is saved.
