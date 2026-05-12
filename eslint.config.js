@@ -28,7 +28,7 @@ const typedTypeScriptAll = tseslint.configs.all.map((config) => ({
 export default tseslint.config(
   {
     name: "pimp-my-codebase/ignores",
-    ignores: ["dist/**", "node_modules/**", ".pimp-my-codebase/runs/**", "package-lock.json"]
+    ignores: ["dist/**", ".test-dist/**", ".test-tmp/**", "node_modules/**", ".pimp-my-codebase/runs/**", "package-lock.json"]
   },
   packageJsonConfigs.recommended,
   {

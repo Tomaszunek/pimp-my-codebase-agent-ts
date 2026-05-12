@@ -1,12 +1,22 @@
-import type { CliDebugInfo, CliResult, OutputFormat, ParsedCli } from "./types.js";
+import type {
+  CliDebugInfo,
+  CliResult,
+  OutputFormat,
+  ParsedCli,
+} from "./types.js";
 
+import { loadProjectConfig } from "../config/index.js";
+import { scanProject } from "../project/index.js";
 import { isKnownCommand } from "./commands.js";
 
-export function createResult(parsed: ParsedCli, debugInfo: CliDebugInfo): CliResult {
+export async function createResult(
+  parsed: ParsedCli,
+  debugInfo: CliDebugInfo,
+): Promise<CliResult> {
   if (parsed.errors.length > 0) {
     const result: CliResult = {
       status: "error",
-      message: parsed.errors.join(" ")
+      message: parsed.errors.join(" "),
     };
 
     if (parsed.debug) {
@@ -19,7 +29,7 @@ export function createResult(parsed: ParsedCli, debugInfo: CliDebugInfo): CliRes
   if (parsed.command === undefined || parsed.command.length === 0) {
     return {
       status: "ok",
-      message: "Help printed."
+      message: "Help printed.",
     };
   }
 
@@ -27,7 +37,7 @@ export function createResult(parsed: ParsedCli, debugInfo: CliDebugInfo): CliRes
     const result: CliResult = {
       status: "error",
       command: parsed.command,
-      message: `Unknown command: ${parsed.command}`
+      message: `Unknown command: ${parsed.command}`,
     };
 
     if (parsed.debug) {
@@ -42,7 +52,7 @@ export function createResult(parsed: ParsedCli, debugInfo: CliDebugInfo): CliRes
       status: "ok",
       command: parsed.command,
       message: "CLI debug information.",
-      data: debugInfo
+      data: debugInfo,
     };
 
     if (parsed.repoPath !== undefined && parsed.repoPath.length > 0) {
@@ -52,10 +62,56 @@ export function createResult(parsed: ParsedCli, debugInfo: CliDebugInfo): CliRes
     return result;
   }
 
+  if (parsed.command === "plan") {
+    const repoPath = parsed.repoPath ?? process.cwd();
+    const configLoadResult = await loadProjectConfig(repoPath);
+
+    if (configLoadResult.errors.length > 0) {
+      const result: CliResult = {
+        status: "error",
+        command: parsed.command,
+        data: configLoadResult,
+        message: configLoadResult.errors.join(" "),
+        repoPath,
+      };
+
+      if (parsed.debug) {
+        result.debug = debugInfo;
+      }
+
+      return result;
+    }
+
+    const inventory = await scanProject({
+      config: configLoadResult.config,
+      repoPath,
+    });
+    const result: CliResult = {
+      status: "ok",
+      command: parsed.command,
+      data: {
+        config: {
+          configPath: configLoadResult.configPath,
+          source: configLoadResult.source,
+          warnings: configLoadResult.warnings,
+        },
+        inventory,
+      },
+      message: "Project inventory created.",
+      repoPath,
+    };
+
+    if (parsed.debug) {
+      result.debug = debugInfo;
+    }
+
+    return result;
+  }
+
   const result: CliResult = {
     status: "not_implemented",
     command: parsed.command,
-    message: `Command '${parsed.command}' is scaffolded but not implemented yet.`
+    message: `Command '${parsed.command}' is scaffolded but not implemented yet.`,
   };
 
   if (parsed.repoPath !== undefined && parsed.repoPath.length > 0) {

@@ -1,5 +1,6 @@
 dist/
 .test-dist/
+.test-tmp/
 node_modules/
 .pimp-my-codebase/runs/
 

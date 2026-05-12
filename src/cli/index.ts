@@ -5,7 +5,7 @@ import { printHelp } from "./help.js";
 import { parseArguments } from "./parse-arguments.js";
 import { createResult, printResult } from "./results.js";
 
-function main(argv: string[]): void {
+async function main(argv: string[]): Promise<void> {
   const parsed = parseArguments(argv);
   const debugInfo = createDebugInfo(argv, parsed);
 
@@ -14,7 +14,7 @@ function main(argv: string[]): void {
     return;
   }
 
-  const result = createResult(parsed, debugInfo);
+  const result = await createResult(parsed, debugInfo);
   printResult(result, parsed.format);
 
   if (result.status === "error") {
@@ -22,4 +22,9 @@ function main(argv: string[]): void {
   }
 }
 
-main(process.argv);
+try {
+  await main(process.argv);
+} catch (error: unknown) {
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exitCode = 1;
+}
