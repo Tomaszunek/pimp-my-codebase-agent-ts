@@ -215,8 +215,12 @@ Planning rules:
 
 Done when:
 
-- `plan.json` is created
-- report includes ranked plan items
+- [x] `plan.json` is created
+- [ ] report includes ranked plan items
+
+Current note:
+
+- `plan` now converts findings into grouped, ranked, proposed plan items and writes `plan.json`. The Markdown report will include those ranked plan items in Step 8.
 
 ## Step 8 - Add Markdown Reporting
 
@@ -408,7 +412,7 @@ Done when:
 - [x] pnpm frontend project detection works.
 - [x] privacy-safe scanner skips forbidden files.
 - [x] deterministic analyzers produce findings.
-- [ ] `plan.json` is saved.
+- [x] `plan.json` is saved.
 - [ ] `report.md` is saved.
 - [ ] `pimp-my-codebase verify --repo ../logo` runs check guards.
 - [ ] verification results are saved.
