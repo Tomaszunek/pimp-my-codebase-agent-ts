@@ -150,9 +150,13 @@ Also maintain:
 
 Done when:
 
-- each run has a stable ID
-- artifacts are written consistently
-- latest run can be resolved
+- [x] each run has a stable ID
+- [x] artifacts are written consistently
+- [x] latest run can be resolved
+
+Current note:
+
+- `plan` persists the scanner inventory now. `findings.json`, `plan.json`, `report.md`, and `verification.json` are initialized as placeholders and will be populated by later steps.
 
 ## Step 6 - Implement Deterministic Analyzers
 
