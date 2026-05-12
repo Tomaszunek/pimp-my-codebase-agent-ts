@@ -15,7 +15,7 @@
     "lint:fix": "eslint . --fix",
     "pimp": "node dist/cli/index.js",
     "start": "node dist/cli/index.js",
-    "test": "npm run build && node dist/cli/cli.test.js"
+    "test": "npm run build && node dist/test-runner.js"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
