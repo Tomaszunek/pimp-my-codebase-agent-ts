@@ -184,8 +184,12 @@ Each finding should include:
 
 Done when:
 
-- scanner output becomes normalized findings
-- findings can be saved to `findings.json`
+- [x] scanner output becomes normalized findings
+- [x] findings can be saved to `findings.json`
+
+Current note:
+
+- `plan` now runs deterministic analyzers and writes normalized findings to `findings.json`. The first analyzer pass covers package manager, scripts, TypeScript config, test setup, lint/format setup, frontend stack signals, documentation, and repository hygiene.
 
 ## Step 7 - Implement Planning
 
@@ -403,7 +407,7 @@ Done when:
 - [x] `pimp-my-codebase plan --repo ../logo` works.
 - [x] pnpm frontend project detection works.
 - [x] privacy-safe scanner skips forbidden files.
-- [ ] deterministic analyzers produce findings.
+- [x] deterministic analyzers produce findings.
 - [ ] `plan.json` is saved.
 - [ ] `report.md` is saved.
 - [ ] `pimp-my-codebase verify --repo ../logo` runs check guards.

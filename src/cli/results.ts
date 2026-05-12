@@ -5,6 +5,7 @@ import type {
   ParsedCli,
 } from "./types.js";
 
+import { analyzeProject } from "../analysis/index.js";
 import { loadProjectConfig } from "../config/index.js";
 import { createRun, writeJsonArtifact } from "../persistence/index.js";
 import { scanProject } from "../project/index.js";
@@ -98,6 +99,16 @@ export async function createResult(
       run: persistedRun,
       value: inventory
     });
+    const findingsArtifact = analyzeProject({
+      inventory,
+      runId: persistedRun.run.id
+    });
+
+    await writeJsonArtifact({
+      artifactName: "findings",
+      run: persistedRun,
+      value: findingsArtifact
+    });
 
     const result: CliResult = {
       status: "ok",
@@ -108,6 +119,7 @@ export async function createResult(
           source: configLoadResult.source,
           warnings: configLoadResult.warnings,
         },
+        findings: findingsArtifact,
         inventory,
         run: {
           artifacts: persistedRun.artifacts,
@@ -117,7 +129,7 @@ export async function createResult(
           path: persistedRun.runPath
         }
       },
-      message: "Project inventory created.",
+      message: "Project inventory and deterministic findings created.",
       repoPath,
     };
 
