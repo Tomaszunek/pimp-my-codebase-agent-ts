@@ -62,6 +62,14 @@ function requireRecord(value: unknown): Readonly<Record<string, unknown>> {
   return value;
 }
 
+function requireNumber(value: unknown): number {
+  if (typeof value !== "number") {
+    assert.fail("Expected a number value.");
+  }
+
+  return value;
+}
+
 function requireString(value: unknown): string {
   if (typeof value !== "string") {
     assert.fail("Expected a string value.");
@@ -111,7 +119,7 @@ void describe("createResult", () => {
     assert.equal(result.message, "Invalid format 'xml'. Use 'text' or 'json'.");
   });
 
-  void it("persists plan inventory artifacts", async () => {
+  void it("persists plan inventory and findings artifacts", async () => {
     const fixtureRoot = await createFixture([
       {
         content: JSON.stringify({
@@ -132,16 +140,24 @@ void describe("createResult", () => {
     try {
       const result = await createResultFor(["node", "cli", "plan", "--repo", fixtureRoot]);
       const data = requireRecord(result.data);
+      const findings = requireRecord(data.findings);
+      const summary = requireRecord(findings.summary);
       const run = requireRecord(data.run);
       const artifacts = requireRecord(run.artifacts);
       const latestArtifacts = requireRecord(run.latestArtifacts);
+      const findingsPath = requireString(artifacts.findings);
       const inventoryPath = requireString(artifacts.inventory);
+      const latestFindingsPath = requireString(latestArtifacts.findings);
       const latestInventoryPath = requireString(latestArtifacts.inventory);
 
       assert.equal(result.status, "ok");
       assert.equal(result.command, "plan");
+      assert.equal(result.message, "Project inventory and deterministic findings created.");
+      assert.ok(requireNumber(summary.total) > 0);
       assert.equal(path.dirname(requireString(run.path)), path.join(fixtureRoot, ".pimp-my-codebase", "runs"));
+      assert.match(await readUtf8File(findingsPath), /"title": "Package manifest is missing guard scripts"/u);
       assert.match(await readUtf8File(inventoryPath), /"name": "result-fixture"/u);
+      assert.match(await readUtf8File(latestFindingsPath), /"title": "Package manifest is missing guard scripts"/u);
       assert.match(await readUtf8File(latestInventoryPath), /"name": "result-fixture"/u);
     } finally {
       await removeFixture(fixtureRoot);
