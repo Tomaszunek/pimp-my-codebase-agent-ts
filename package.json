@@ -1,0 +1,41 @@
+{
+  "name": "pimp-my-codebase-agent",
+  "version": "0.1.0",
+  "description": "Local-first TypeScript CLI agent for improving frontend codebases.",
+  "type": "module",
+  "private": true,
+  "packageManager": "pnpm@10.11.0",
+  "bin": {
+    "pimp-my-codebase": "./dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "node --experimental-strip-types src/cli/index.ts",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "pimp": "node dist/cli/index.js",
+    "start": "node dist/cli/index.js",
+    "test": "npm run build && node dist/cli/cli.test.js"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@eslint/json": "^1.2.0",
+    "@types/node": "^24.10.1",
+    "eslint": "^10.3.0",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import-x": "^4.16.2",
+    "eslint-plugin-n": "^18.0.1",
+    "eslint-plugin-package-json": "^0.91.2",
+    "eslint-plugin-perfectionist": "^5.9.0",
+    "eslint-plugin-promise": "^7.3.0",
+    "eslint-plugin-regexp": "^3.1.0",
+    "eslint-plugin-security": "^4.0.0",
+    "eslint-plugin-unicorn": "^64.0.0",
+    "globals": "^17.6.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.59.2"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  }
+}

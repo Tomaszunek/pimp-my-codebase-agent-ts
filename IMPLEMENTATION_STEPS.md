@@ -21,6 +21,7 @@ Create the TypeScript project foundation.
 - Add `tsconfig.json`.
 - Add source directory structure.
 - Add CLI entrypoint.
+- Add `--debug`, `--json`, and `--format json` for inspecting CLI parsing and command results.
 - Add build script.
 - Add basic test script placeholder.
 
@@ -46,6 +47,7 @@ Done when:
 
 - `pnpm build` compiles.
 - CLI can print help.
+- CLI can print debug/result output as JSON.
 
 ## Step 2 - Define Core Types
 
@@ -393,7 +395,7 @@ Done when:
 
 ## First Milestone Checklist
 
-- [ ] TypeScript CLI skeleton exists.
+- [x] TypeScript CLI skeleton exists.
 - [ ] `pimp-my-codebase plan --repo ../logo` works.
 - [ ] pnpm frontend project detection works.
 - [ ] privacy-safe scanner skips forbidden files.

@@ -185,6 +185,8 @@ pimp-my-codebase plan --repo .
 pimp-my-codebase apply --repo . --plan .pimp-my-codebase/runs/latest/plan.json --items item-1,item-2
 pimp-my-codebase verify --repo .
 pimp-my-codebase report --repo .
+pimp-my-codebase debug --repo . --json
+pimp-my-codebase plan --repo . --debug --format json
 ```
 
 ## V1 Scope
