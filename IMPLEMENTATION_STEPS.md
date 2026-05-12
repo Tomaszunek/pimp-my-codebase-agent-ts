@@ -216,11 +216,11 @@ Planning rules:
 Done when:
 
 - [x] `plan.json` is created
-- [ ] report includes ranked plan items
+- [x] report includes ranked plan items
 
 Current note:
 
-- `plan` now converts findings into grouped, ranked, proposed plan items and writes `plan.json`. The Markdown report will include those ranked plan items in Step 8.
+- `plan` now converts findings into grouped, ranked, proposed plan items and writes `plan.json`. The Markdown report includes those ranked plan items.
 
 ## Step 8 - Add Markdown Reporting
 
@@ -239,8 +239,12 @@ Report sections:
 
 Done when:
 
-- `report.md` is useful without opening JSON files
-- report is generated for `../logo`
+- [x] `report.md` is useful without opening JSON files
+- [x] report is generated for `../logo`
+
+Current note:
+
+- `plan` now writes a human-readable `report.md` with run summary, detected project facts, safety/privacy summary, findings by category, prioritized plan items, suggested check guards, skipped paths, and next actions.
 
 ## Step 9 - Add LM Studio Provider
 
@@ -413,7 +417,7 @@ Done when:
 - [x] privacy-safe scanner skips forbidden files.
 - [x] deterministic analyzers produce findings.
 - [x] `plan.json` is saved.
-- [ ] `report.md` is saved.
+- [x] `report.md` is saved.
 - [ ] `pimp-my-codebase verify --repo ../logo` runs check guards.
 - [ ] verification results are saved.
 - [ ] report summarizes findings, plan, and verification.
