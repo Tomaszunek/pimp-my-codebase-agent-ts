@@ -101,6 +101,7 @@ void describe("scanProject", () => {
       { content: "ignored", path: ".git/config" },
       { content: "ignored", path: "node_modules/pkg/index.js" },
       { content: "ignored", path: "dist/bundle.js" },
+      { content: "ignored", path: ".test-dist/cli/index.js" },
       { content: "console.log('safe');", path: "src/main.ts" }
     ]);
 
@@ -115,11 +116,13 @@ void describe("scanProject", () => {
       assert.equal(filePaths.has(".git/config"), false);
       assert.equal(filePaths.has("node_modules/pkg/index.js"), false);
       assert.equal(filePaths.has("dist/bundle.js"), false);
+      assert.equal(filePaths.has(".test-dist/cli/index.js"), false);
       assert.equal(skippedPaths.has(".env"), true);
       assert.equal(skippedPaths.has(".npmrc"), true);
       assert.equal(skippedPaths.has(".git"), true);
       assert.equal(skippedPaths.has("node_modules"), true);
       assert.equal(skippedPaths.has("dist"), true);
+      assert.equal(skippedPaths.has(".test-dist"), true);
     } finally {
       await removeFixture(fixtureRoot);
     }

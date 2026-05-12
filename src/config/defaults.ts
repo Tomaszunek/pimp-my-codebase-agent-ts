@@ -17,6 +17,8 @@ export const DEFAULT_PRIVACY_IGNORE = [
   "dist",
   "build",
   "coverage",
+  ".test-dist",
+  ".test-tmp",
   ".pimp-my-codebase/runs"
 ] as const;
 

@@ -6,6 +6,7 @@ import type {
 } from "./types.js";
 
 import { loadProjectConfig } from "../config/index.js";
+import { createRun, writeJsonArtifact } from "../persistence/index.js";
 import { scanProject } from "../project/index.js";
 import { isKnownCommand } from "./commands.js";
 
@@ -86,6 +87,18 @@ export async function createResult(
       config: configLoadResult.config,
       repoPath,
     });
+    const persistedRun = await createRun({
+      mode: "plan",
+      projectId: inventory.project.id,
+      projectRootPath: inventory.project.rootPath
+    });
+
+    await writeJsonArtifact({
+      artifactName: "inventory",
+      run: persistedRun,
+      value: inventory
+    });
+
     const result: CliResult = {
       status: "ok",
       command: parsed.command,
@@ -96,6 +109,13 @@ export async function createResult(
           warnings: configLoadResult.warnings,
         },
         inventory,
+        run: {
+          artifacts: persistedRun.artifacts,
+          id: persistedRun.run.id,
+          latestArtifacts: persistedRun.latestArtifacts,
+          latestPath: persistedRun.latestPath,
+          path: persistedRun.runPath
+        }
       },
       message: "Project inventory created.",
       repoPath,
