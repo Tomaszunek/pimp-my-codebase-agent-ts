@@ -53,7 +53,7 @@ export const DEFAULT_PROJECT_CONFIG: ProjectConfig = {
   checks: DEFAULT_CHECK_GUARDS,
   generatedFileAllowlist: [],
   llm: {
-    baseUrl: "http://localhost:1234/v1",
+    baseUrl: "ws://127.0.0.1:1234",
     enabled: false,
     model: "",
     provider: "lmstudio",

@@ -261,7 +261,7 @@ Provider interface should support:
 LM Studio default:
 
 ```text
-http://localhost:1234/v1
+ws://127.0.0.1:1234
 ```
 
 Use LLM for:
@@ -280,8 +280,12 @@ Do not send:
 
 Done when:
 
-- plan generation can optionally use LM Studio
-- deterministic plan still works if LM Studio is unavailable
+- [x] plan generation can optionally use LM Studio
+- [x] deterministic plan still works if LM Studio is unavailable
+
+Current note:
+
+- `plan` records an `llmReview` in `plan.json`. When LLM config is disabled, it records a disabled status. When enabled with a model, the LM Studio provider uses `@lmstudio/sdk` to request a concise review of safe metadata only; failures are captured as warnings without breaking deterministic artifacts.
 
 ## Step 10 - Add Skill Markdown Loading
 
@@ -425,8 +429,8 @@ Done when:
 ## V1 Completion Checklist
 
 - [ ] CLI commands exist: `plan`, `apply`, `verify`, `report`.
-- [ ] local LM Studio provider works.
-- [ ] deterministic fallback works without LM Studio.
+- [x] local LM Studio provider works.
+- [x] deterministic fallback works without LM Studio.
 - [ ] skill markdown files influence planning.
 - [ ] batch approval by plan item ID works.
 - [ ] apply mode can make one safe low-risk edit.

@@ -7,6 +7,7 @@ import type {
 
 import { analyzeProject } from "../analysis/index.js";
 import { loadProjectConfig } from "../config/index.js";
+import { generateLlmPlanReview } from "../llm/index.js";
 import { createRun, writeJsonArtifact, writeTextArtifact } from "../persistence/index.js";
 import { createImprovementPlan } from "../planning/index.js";
 import { scanProject } from "../project/index.js";
@@ -116,18 +117,28 @@ export async function createResult(
       findings: findingsArtifact.findings,
       runId: persistedRun.run.id
     });
+    const llmReview = await generateLlmPlanReview({
+      config: configLoadResult.config.llm,
+      findingsArtifact,
+      planArtifact,
+      projectInventory: inventory
+    });
+    const reviewedPlanArtifact = {
+      ...planArtifact,
+      llmReview
+    };
 
     await writeJsonArtifact({
       artifactName: "plan",
       run: persistedRun,
-      value: planArtifact
+      value: reviewedPlanArtifact
     });
     const reportArtifact = createMarkdownReport({
       config: configLoadResult.config,
       configLoadResult,
       findingsArtifact,
       inventory,
-      planArtifact,
+      planArtifact: reviewedPlanArtifact,
       run: persistedRun.run
     });
 
@@ -148,7 +159,7 @@ export async function createResult(
         },
         findings: findingsArtifact,
         inventory,
-        plan: planArtifact,
+        plan: reviewedPlanArtifact,
         report: {
           latestPath: persistedRun.latestArtifacts.report,
           path: persistedRun.artifacts.report,

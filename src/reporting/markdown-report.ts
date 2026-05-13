@@ -355,6 +355,29 @@ function writeNextActions(lines: string[], options: CreateMarkdownReportOptions)
   );
 }
 
+function writeLlmReview(lines: string[], options: CreateMarkdownReportOptions): void {
+  const { llmReview } = options.planArtifact;
+
+  addSection(lines, "LM Studio Review");
+
+  if (llmReview === undefined) {
+    lines.push("No LM Studio review was recorded for this run.");
+    return;
+  }
+
+  lines.push(
+    `- Status: ${llmReview.status}`,
+    `- Provider: ${llmReview.provider}`,
+    `- Model: ${llmReview.model ?? EMPTY_VALUE}`,
+    `- Base URL: ${llmReview.baseUrl ?? EMPTY_VALUE}`,
+    `- Warnings: ${formatList(llmReview.warnings)}`
+  );
+
+  if (llmReview.content !== undefined && llmReview.content.trim().length > 0) {
+    lines.push("", llmReview.content.trim());
+  }
+}
+
 function writePlan(lines: string[], options: CreateMarkdownReportOptions): void {
   addSection(lines, "Prioritized Plan");
 
@@ -423,6 +446,7 @@ export function createMarkdownReport(options: CreateMarkdownReportOptions): Mark
   writePrivacySummary(lines, options);
   writeFindings(lines, options);
   writePlan(lines, options);
+  writeLlmReview(lines, options);
   writeCheckGuards(lines, options);
   writeSkippedPaths(lines, options);
   writeNextActions(lines, options);

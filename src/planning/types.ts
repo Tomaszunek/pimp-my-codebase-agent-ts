@@ -1,4 +1,5 @@
 import type { Finding, FindingCategory, ImprovementPlan, PlanItem } from "../core/index.js";
+import type { LlmPlanReview } from "../llm/index.js";
 
 export interface CreateImprovementPlanOptions {
   readonly createdAt?: Date;
@@ -7,6 +8,7 @@ export interface CreateImprovementPlanOptions {
 }
 
 export interface PlanArtifact {
+  readonly llmReview?: LlmPlanReview;
   readonly plan: ImprovementPlan;
   readonly runId: string;
   readonly summary: PlanSummary;
