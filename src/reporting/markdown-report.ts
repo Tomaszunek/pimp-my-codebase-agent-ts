@@ -487,6 +487,36 @@ function writePlan(lines: string[], options: CreateMarkdownReportOptions): void 
   }
 }
 
+function writePatchSets(lines: string[], options: CreateMarkdownReportOptions): void {
+  const { patchArtifact } = options;
+
+  addSection(lines, "Applied Changes");
+
+  if (patchArtifact === undefined || patchArtifact.patchSets.length === 0) {
+    lines.push("No patch sets were recorded for this run.");
+    return;
+  }
+
+  lines.push(
+    `- Total patch sets: ${patchArtifact.summary.total}`,
+    `- Status counts: ${formatCountMap(new Map(Object.entries(patchArtifact.summary.byStatus)))}`,
+    `- Changed files: ${patchArtifact.summary.changedFiles}`,
+    "",
+    "| Plan Item | Status | Changed Files | Summary |",
+    "| --- | --- | --- | --- |"
+  );
+
+  for (const patchSet of patchArtifact.patchSets) {
+    lines.push(
+      `| ${escapeTableCell(patchSet.planItemId)} | ${patchSet.status} | ${patchSet.changes.length} | ${escapeTableCell(patchSet.summary)} |`
+    );
+
+    for (const change of patchSet.changes) {
+      lines.push(`  - ${change.changeType}: ${change.path} (+${change.linesAdded}/-${change.linesRemoved})`);
+    }
+  }
+}
+
 function writePrivacySummary(lines: string[], options: CreateMarkdownReportOptions): void {
   const ignorePatterns = truncateValues([...options.config.privacy.ignore], MAX_PATTERN_COUNT);
 
@@ -503,6 +533,7 @@ function writePrivacySummary(lines: string[], options: CreateMarkdownReportOptio
 
 function writeRunSummary(lines: string[], options: CreateMarkdownReportOptions): void {
   const verificationCount = options.verificationArtifact?.summary.total ?? 0;
+  const patchSetCount = options.patchArtifact?.summary.total ?? 0;
 
   lines.push(
     "# Pimp My Codebase Report",
@@ -514,6 +545,7 @@ function writeRunSummary(lines: string[], options: CreateMarkdownReportOptions):
     `- Completed: ${options.run.completedAt ?? EMPTY_VALUE}`,
     `- Findings: ${options.findingsArtifact.summary.total}`,
     `- Plan items: ${options.planArtifact.summary.total}`,
+    `- Patch sets: ${patchSetCount}`,
     `- Verification runs: ${verificationCount}`
   );
 }
@@ -604,6 +636,7 @@ export function createMarkdownReport(options: CreateMarkdownReportOptions): Mark
   writeFindings(lines, options);
   writeSkillGuidance(lines, options);
   writePlan(lines, options);
+  writePatchSets(lines, options);
   writeLlmReview(lines, options);
   writeCheckGuards(lines, options);
   writeVerificationResults(lines, options);
@@ -616,6 +649,7 @@ export function createMarkdownReport(options: CreateMarkdownReportOptions): Mark
     runId: options.run.id,
     summary: {
       findingCount: options.findingsArtifact.summary.total,
+      patchSetCount: options.patchArtifact?.summary.total ?? 0,
       planItemCount: options.planArtifact.summary.total,
       skippedPathCount: options.inventory.skippedPaths.length,
       verificationCount: options.verificationArtifact?.summary.total ?? 0

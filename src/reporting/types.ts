@@ -1,4 +1,5 @@
 import type { FindingsArtifact } from "../analysis/index.js";
+import type { ApplyArtifact } from "../apply/index.js";
 import type { ConfigLoadResult, ProjectConfig } from "../config/index.js";
 import type { AgentRun } from "../core/index.js";
 import type { PlanArtifact } from "../planning/index.js";
@@ -10,6 +11,7 @@ export interface CreateMarkdownReportOptions {
   readonly configLoadResult: Pick<ConfigLoadResult, "configPath" | "source" | "warnings">;
   readonly findingsArtifact: FindingsArtifact;
   readonly inventory: ProjectInventory;
+  readonly patchArtifact?: ApplyArtifact;
   readonly planArtifact: PlanArtifact;
   readonly run: AgentRun;
   readonly verificationArtifact?: VerificationArtifact;
@@ -23,6 +25,7 @@ export interface MarkdownReportArtifact {
 
 export interface MarkdownReportSummary {
   readonly findingCount: number;
+  readonly patchSetCount: number;
   readonly planItemCount: number;
   readonly skippedPathCount: number;
   readonly verificationCount: number;

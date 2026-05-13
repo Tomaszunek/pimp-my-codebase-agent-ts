@@ -380,7 +380,11 @@ Apply mode should:
 
 Done when:
 
-- one low-risk improvement can be applied and reported
+- [x] one low-risk improvement can be applied and reported
+
+Current note:
+
+- `apply` can load a saved plan, validate selected item IDs, refuse high-risk items unless `--allow-high-risk` is passed, create a missing root `README.md` for low-risk documentation items, record `patches.json`, run configured check guards, and include applied changes plus verification in the final report.
 
 ## Step 13 - Strengthen Frontend Intelligence
 
@@ -440,9 +444,9 @@ Done when:
 - [x] local LM Studio provider works.
 - [x] deterministic fallback works without LM Studio.
 - [x] skill markdown files influence planning.
-- [ ] batch approval by plan item ID works.
-- [ ] apply mode can make one safe low-risk edit.
-- [ ] patch sets and file changes are recorded.
-- [ ] final report includes applied changes and verification results.
+- [x] batch approval by plan item ID works.
+- [x] apply mode can make one safe low-risk edit.
+- [x] patch sets and file changes are recorded.
+- [x] final report includes applied changes and verification results.
 - [ ] generated files are denied unless explicitly allowed.
 - [ ] no git automation is performed.
