@@ -27,6 +27,8 @@ const EMPTY_VALUE = "none";
 const MAX_FINDINGS_PER_CATEGORY = 5;
 const MAX_PATTERN_COUNT = 8;
 const MAX_SKIPPED_PATH_EXAMPLES = 6;
+const MAX_VERIFICATION_OUTPUT_LENGTH = 240;
+const OUTPUT_WHITESPACE_PATTERN = /\s+/gu;
 const PRIORITY_CRITICAL_WEIGHT = 4;
 const PRIORITY_HIGH_WEIGHT = 3;
 const SEVERITY_CRITICAL_WEIGHT = 5;
@@ -110,6 +112,28 @@ function formatList(values: readonly string[]): string {
   }
 
   return values.join(", ");
+}
+
+function formatOptionalExitCode(exitCode: number | undefined): string {
+  if (exitCode === undefined) {
+    return EMPTY_VALUE;
+  }
+
+  return String(exitCode);
+}
+
+function formatVerificationOutput(value: string): string {
+  const trimmedValue = value.trim().replaceAll(OUTPUT_WHITESPACE_PATTERN, " ");
+
+  if (trimmedValue.length === 0) {
+    return EMPTY_VALUE;
+  }
+
+  if (trimmedValue.length <= MAX_VERIFICATION_OUTPUT_LENGTH) {
+    return trimmedValue;
+  }
+
+  return `${trimmedValue.slice(0, MAX_VERIFICATION_OUTPUT_LENGTH)}...`;
 }
 
 function getCategoryRank(category: FindingCategory): number {
@@ -478,6 +502,8 @@ function writePrivacySummary(lines: string[], options: CreateMarkdownReportOptio
 }
 
 function writeRunSummary(lines: string[], options: CreateMarkdownReportOptions): void {
+  const verificationCount = options.verificationArtifact?.summary.total ?? 0;
+
   lines.push(
     "# Pimp My Codebase Report",
     "",
@@ -487,7 +513,8 @@ function writeRunSummary(lines: string[], options: CreateMarkdownReportOptions):
     `- Started: ${options.run.startedAt}`,
     `- Completed: ${options.run.completedAt ?? EMPTY_VALUE}`,
     `- Findings: ${options.findingsArtifact.summary.total}`,
-    `- Plan items: ${options.planArtifact.summary.total}`
+    `- Plan items: ${options.planArtifact.summary.total}`,
+    `- Verification runs: ${verificationCount}`
   );
 }
 
@@ -529,6 +556,45 @@ function writeSkillGuidance(lines: string[], options: CreateMarkdownReportOption
   );
 }
 
+function writeVerificationResults(lines: string[], options: CreateMarkdownReportOptions): void {
+  const { verificationArtifact } = options;
+
+  addSection(lines, "Verification Results");
+
+  if (verificationArtifact === undefined || verificationArtifact.verificationRuns.length === 0) {
+    lines.push("No verification results were recorded for this run.");
+    return;
+  }
+
+  lines.push(
+    `- Total: ${verificationArtifact.summary.total}`,
+    `- Status counts: ${Object.entries(verificationArtifact.summary.byStatus)
+      .map(([status, count]) => `${status}: ${count}`)
+      .join(", ")}`,
+    `- Duration: ${verificationArtifact.summary.durationMs}ms`,
+    "",
+    "| ID | Status | Exit Code | Duration | Command |",
+    "| --- | --- | --- | --- | --- |"
+  );
+
+  for (const verificationRun of verificationArtifact.verificationRuns) {
+    lines.push(
+      `| ${escapeTableCell(verificationRun.checkGuardId)} | ${verificationRun.status} | ${formatOptionalExitCode(verificationRun.exitCode)} | ${verificationRun.durationMs}ms | \`${escapeTableCell(verificationRun.command)}\` |`
+    );
+
+    const stdoutSummary = formatVerificationOutput(verificationRun.stdoutSummary);
+    const stderrSummary = formatVerificationOutput(verificationRun.stderrSummary);
+
+    if (stdoutSummary !== EMPTY_VALUE) {
+      lines.push(`  - stdout: ${stdoutSummary}`);
+    }
+
+    if (stderrSummary !== EMPTY_VALUE) {
+      lines.push(`  - stderr: ${stderrSummary}`);
+    }
+  }
+}
+
 export function createMarkdownReport(options: CreateMarkdownReportOptions): MarkdownReportArtifact {
   const lines: string[] = [];
 
@@ -540,6 +606,7 @@ export function createMarkdownReport(options: CreateMarkdownReportOptions): Mark
   writePlan(lines, options);
   writeLlmReview(lines, options);
   writeCheckGuards(lines, options);
+  writeVerificationResults(lines, options);
   writeSkippedPaths(lines, options);
   writeNextActions(lines, options);
   lines.push("");
@@ -550,7 +617,8 @@ export function createMarkdownReport(options: CreateMarkdownReportOptions): Mark
     summary: {
       findingCount: options.findingsArtifact.summary.total,
       planItemCount: options.planArtifact.summary.total,
-      skippedPathCount: options.inventory.skippedPaths.length
+      skippedPathCount: options.inventory.skippedPaths.length,
+      verificationCount: options.verificationArtifact?.summary.total ?? 0
     }
   };
 }

@@ -1,3 +1,6 @@
+import type { FindingsArtifact } from "../analysis/index.js";
+import type { PlanArtifact } from "../planning/index.js";
+import type { VerificationArtifact } from "../verification/index.js";
 import type {
   CliDebugInfo,
   CliResult,
@@ -13,7 +16,46 @@ import { createImprovementPlan } from "../planning/index.js";
 import { scanProject } from "../project/index.js";
 import { createMarkdownReport } from "../reporting/index.js";
 import { loadSkills } from "../skills/index.js";
+import { runCheckGuards } from "../verification/index.js";
 import { isKnownCommand } from "./commands.js";
+
+function createEmptyFindingsArtifact(runId: string): FindingsArtifact {
+  return {
+    findings: [],
+    runId,
+    summary: {
+      byCategory: {},
+      bySeverity: {},
+      total: 0
+    }
+  };
+}
+
+function createEmptyPlanArtifact(runId: string, createdAt: string): PlanArtifact {
+  return {
+    plan: {
+      createdAt,
+      id: `${runId}-verification-plan`,
+      items: [],
+      runId,
+      status: "proposed"
+    },
+    runId,
+    summary: {
+      byPriority: {},
+      byRisk: {},
+      total: 0
+    }
+  };
+}
+
+function getVerificationIssueCount(verificationArtifact: VerificationArtifact): number {
+  return (
+    (verificationArtifact.summary.byStatus.failed ?? 0) +
+    (verificationArtifact.summary.byStatus.skipped ?? 0) +
+    (verificationArtifact.summary.byStatus.timed_out ?? 0)
+  );
+}
 
 export async function createResult(
   parsed: ParsedCli,
@@ -182,6 +224,112 @@ export async function createResult(
         skills: skillLoadResult
       },
       message: "Project inventory, findings, skill-guided improvement plan, and report created.",
+      repoPath,
+    };
+
+    if (parsed.debug) {
+      result.debug = debugInfo;
+    }
+
+    return result;
+  }
+
+  if (parsed.command === "verify") {
+    const repoPath = parsed.repoPath ?? process.cwd();
+    const configLoadResult = await loadProjectConfig(repoPath);
+
+    if (configLoadResult.errors.length > 0) {
+      const result: CliResult = {
+        status: "error",
+        command: parsed.command,
+        data: configLoadResult,
+        message: configLoadResult.errors.join(" "),
+        repoPath,
+      };
+
+      if (parsed.debug) {
+        result.debug = debugInfo;
+      }
+
+      return result;
+    }
+
+    const inventory = await scanProject({
+      config: configLoadResult.config,
+      repoPath,
+    });
+    const persistedRun = await createRun({
+      mode: "verify",
+      projectId: inventory.project.id,
+      projectRootPath: inventory.project.rootPath
+    });
+
+    await writeJsonArtifact({
+      artifactName: "inventory",
+      run: persistedRun,
+      value: inventory
+    });
+
+    const verificationArtifact = await runCheckGuards({
+      checkGuards: inventory.checkGuards,
+      projectRootPath: inventory.project.rootPath,
+      runId: persistedRun.run.id
+    });
+
+    await writeJsonArtifact({
+      artifactName: "verification",
+      run: persistedRun,
+      value: verificationArtifact
+    });
+
+    const findingsArtifact = createEmptyFindingsArtifact(persistedRun.run.id);
+    const planArtifact = createEmptyPlanArtifact(persistedRun.run.id, persistedRun.run.startedAt);
+    const reportArtifact = createMarkdownReport({
+      config: configLoadResult.config,
+      configLoadResult,
+      findingsArtifact,
+      inventory,
+      planArtifact,
+      run: persistedRun.run,
+      verificationArtifact
+    });
+
+    await writeTextArtifact({
+      artifactName: "report",
+      run: persistedRun,
+      value: reportArtifact.markdown
+    });
+
+    const issueCount = getVerificationIssueCount(verificationArtifact);
+    const result: CliResult = {
+      status: "ok",
+      command: parsed.command,
+      data: {
+        config: {
+          configPath: configLoadResult.configPath,
+          source: configLoadResult.source,
+          warnings: configLoadResult.warnings,
+        },
+        inventory,
+        report: {
+          latestPath: persistedRun.latestArtifacts.report,
+          path: persistedRun.artifacts.report,
+          summary: reportArtifact.summary,
+          runId: reportArtifact.runId
+        },
+        run: {
+          artifacts: persistedRun.artifacts,
+          id: persistedRun.run.id,
+          latestArtifacts: persistedRun.latestArtifacts,
+          latestPath: persistedRun.latestPath,
+          path: persistedRun.runPath
+        },
+        verification: verificationArtifact
+      },
+      message:
+        issueCount === 0
+          ? "Configured check guards completed."
+          : `Configured check guards completed with ${issueCount} issue(s).`,
       repoPath,
     };
 
