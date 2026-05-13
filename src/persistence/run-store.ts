@@ -17,6 +17,7 @@ import type {
 const ARTIFACT_FILE_NAMES: Readonly<Record<RunJsonArtifactName | RunTextArtifactName | "run", string>> = {
   findings: "findings.json",
   inventory: "inventory.json",
+  patches: "patches.json",
   plan: "plan.json",
   report: "report.md",
   run: "run.json",
@@ -33,6 +34,7 @@ function createArtifactPaths(runPath: string): RunArtifactPaths {
   return {
     findings: path.join(runPath, ARTIFACT_FILE_NAMES.findings),
     inventory: path.join(runPath, ARTIFACT_FILE_NAMES.inventory),
+    patches: path.join(runPath, ARTIFACT_FILE_NAMES.patches),
     plan: path.join(runPath, ARTIFACT_FILE_NAMES.plan),
     report: path.join(runPath, ARTIFACT_FILE_NAMES.report),
     run: path.join(runPath, ARTIFACT_FILE_NAMES.run),
@@ -62,6 +64,13 @@ function createInitialPlanArtifact(runId: string): unknown {
   return {
     items: [],
     planStatus: "pending",
+    runId
+  };
+}
+
+function createInitialPatchArtifact(runId: string): unknown {
+  return {
+    patchSets: [],
     runId
   };
 }
@@ -124,6 +133,9 @@ function getArtifactPath(artifactPaths: RunArtifactPaths, artifactName: keyof Ru
     case "inventory": {
       return artifactPaths.inventory;
     }
+    case "patches": {
+      return artifactPaths.patches;
+    }
     case "plan": {
       return artifactPaths.plan;
     }
@@ -185,6 +197,11 @@ async function writeInitialArtifacts(persistedRun: PersistedRun): Promise<void> 
       artifactName: "plan",
       run: persistedRun,
       value: createInitialPlanArtifact(id)
+    }),
+    writeJsonArtifact({
+      artifactName: "patches",
+      run: persistedRun,
+      value: createInitialPatchArtifact(id)
     }),
     writeTextArtifact({
       artifactName: "report",

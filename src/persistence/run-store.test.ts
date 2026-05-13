@@ -52,6 +52,7 @@ void describe("run store", () => {
       assert.equal(persistedRun.run.completedAt, FIXED_COMPLETED_AT.toISOString());
       assert.equal(persistedRun.runPath, path.join(fixtureRoot, ".pimp-my-codebase", "runs", RUN_ID));
       assert.match(await readUtf8File(persistedRun.artifacts.inventory), /"runId": "run-test"/u);
+      assert.match(await readUtf8File(persistedRun.artifacts.patches), /"patchSets": \[\]/u);
       assert.match(await readUtf8File(persistedRun.artifacts.report), /Pimp My Codebase Run run-test/u);
       assert.equal(await resolveLatestRunPath(fixtureRoot), persistedRun.runPath);
     } finally {

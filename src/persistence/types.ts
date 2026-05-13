@@ -1,6 +1,6 @@
 import type { AgentRun } from "../core/index.js";
 
-export type RunJsonArtifactName = "findings" | "inventory" | "plan" | "verification";
+export type RunJsonArtifactName = "findings" | "inventory" | "patches" | "plan" | "verification";
 export type RunTextArtifactName = "report";
 export type RunArtifactName = RunJsonArtifactName | RunTextArtifactName;
 
@@ -25,6 +25,7 @@ export interface PersistedRun {
 export interface RunArtifactPaths {
   readonly findings: string;
   readonly inventory: string;
+  readonly patches: string;
   readonly plan: string;
   readonly report: string;
   readonly run: string;

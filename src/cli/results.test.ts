@@ -72,6 +72,14 @@ function requireNumber(value: unknown): number {
   return value;
 }
 
+function requireArray(value: unknown): readonly unknown[] {
+  if (!Array.isArray(value)) {
+    assert.fail("Expected an array value.");
+  }
+
+  return value;
+}
+
 function requireString(value: unknown): string {
   if (typeof value !== "string") {
     assert.fail("Expected a string value.");
@@ -92,15 +100,15 @@ void describe("createResult", () => {
   });
 
   void it("returns not implemented for scaffolded commands", async () => {
-    const result = await createResultFor(["node", "cli", "apply", "--repo", "../logo"]);
+    const result = await createResultFor(["node", "cli", "report", "--repo", "../logo"]);
 
     assert.equal(result.status, "not_implemented");
-    assert.equal(result.command, "apply");
+    assert.equal(result.command, "report");
     assert.equal(result.repoPath, "../logo");
   });
 
   void it("includes debug info when requested", async () => {
-    const result = await createResultFor(["node", "cli", "apply", "--debug"]);
+    const result = await createResultFor(["node", "cli", "report", "--debug"]);
 
     assert.equal(result.status, "not_implemented");
     assert.notEqual(result.debug, undefined);
@@ -229,6 +237,92 @@ void describe("createResult", () => {
       assert.match(await readUtf8File(verificationPath), /"stdoutSummary": "guard ok\\n"/u);
       assert.match(await readUtf8File(reportPath), /## Verification Results/u);
       assert.match(await readUtf8File(reportPath), /node-ok/u);
+    } finally {
+      await removeFixture(fixtureRoot);
+    }
+  });
+
+  void it("applies a selected low-risk documentation plan item and records patches", async () => {
+    const fixtureRoot = await createFixture([
+      {
+        content: JSON.stringify({
+          checks: [
+            {
+              command: `"${process.execPath}" -e "console.log('apply guard ok')"`,
+              id: "node-ok",
+              purpose: "custom",
+              timeoutSeconds: CLI_CHECK_TIMEOUT_SECONDS
+            }
+          ],
+          packageManager: "pnpm",
+          projectType: "node",
+          skills: []
+        }),
+        path: ".pimp-my-codebase/config.json"
+      },
+      {
+        content: JSON.stringify({
+          name: "apply-fixture",
+          scripts: {
+            build: "node -e \"process.exit(0)\"",
+            lint: "node -e \"process.exit(0)\"",
+            test: "node -e \"process.exit(0)\"",
+            typecheck: "node -e \"process.exit(0)\""
+          }
+        }),
+        path: "package.json"
+      },
+      { content: "node_modules\n", path: ".gitignore" },
+      { content: "lockfileVersion: '9.0'", path: "pnpm-lock.yaml" }
+    ]);
+
+    try {
+      const planResult = await createResultFor(["node", "cli", "plan", "--repo", fixtureRoot]);
+      const planData = requireRecord(planResult.data);
+      const planReport = requireRecord(planData.report);
+      const planRun = requireRecord(planData.run);
+      const planArtifacts = requireRecord(planRun.artifacts);
+      const planArtifactPath = requireString(planArtifacts.plan);
+      const planArtifact = requireRecord(planData.plan);
+      const improvementPlan = requireRecord(planArtifact.plan);
+      const planItems = requireArray(improvementPlan.items).map((item) => requireRecord(item));
+      const documentationItem = planItems.find((item) => item.category === "documentation");
+
+      assert.equal(planResult.status, "ok");
+      assert.ok(documentationItem);
+
+      const applyResult = await createResultFor([
+        "node",
+        "cli",
+        "apply",
+        "--repo",
+        fixtureRoot,
+        "--plan",
+        planArtifactPath,
+        "--items",
+        requireString(documentationItem.id)
+      ]);
+      const applyData = requireRecord(applyResult.data);
+      const patches = requireRecord(applyData.patches);
+      const patchSummary = requireRecord(patches.summary);
+      const applyReport = requireRecord(applyData.report);
+      const applyRun = requireRecord(applyData.run);
+      const applyArtifacts = requireRecord(applyRun.artifacts);
+      const readmePath = path.join(fixtureRoot, "README.md");
+      const patchesPath = requireString(applyArtifacts.patches);
+      const reportPath = requireString(applyReport.path);
+
+      assert.equal(applyResult.status, "ok");
+      assert.equal(applyResult.command, "apply");
+      assert.equal(applyResult.message, "Apply completed with 1 applied patch set(s).");
+      assert.equal(requireNumber(patchSummary.total), 1);
+      assert.equal(requireNumber(patchSummary.changedFiles), 1);
+      assert.match(await readUtf8File(readmePath), /^# apply-fixture/u);
+      assert.match(await readUtf8File(patchesPath), /"status": "applied"/u);
+      assert.match(await readUtf8File(patchesPath), /"changeType": "create"/u);
+      assert.match(await readUtf8File(reportPath), /## Applied Changes/u);
+      assert.match(await readUtf8File(reportPath), /Created README.md/u);
+      assert.match(requireString(planReport.path), /report\.md$/u);
     } finally {
       await removeFixture(fixtureRoot);
     }
