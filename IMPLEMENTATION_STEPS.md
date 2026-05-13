@@ -349,8 +349,12 @@ Rules:
 
 Done when:
 
-- `pimp-my-codebase verify --repo ../logo` runs configured checks
-- verification results are saved to `verification.json`
+- [x] `pimp-my-codebase verify --repo ../logo` runs configured checks
+- [x] verification results are saved to `verification.json`
+
+Current note:
+
+- `verify` loads configured check guards, rejects shell-control syntax, captures exit code, duration, bounded stdout/stderr summaries, writes `verification.json`, and includes verification results in the Markdown report.
 
 ## Step 12 - Add Apply Mode
 
@@ -426,16 +430,16 @@ Done when:
 - [x] deterministic analyzers produce findings.
 - [x] `plan.json` is saved.
 - [x] `report.md` is saved.
-- [ ] `pimp-my-codebase verify --repo ../logo` runs check guards.
-- [ ] verification results are saved.
-- [ ] report summarizes findings, plan, and verification.
+- [x] `pimp-my-codebase verify --repo ../logo` runs check guards.
+- [x] verification results are saved.
+- [x] report summarizes findings, plan, and verification.
 
 ## V1 Completion Checklist
 
 - [ ] CLI commands exist: `plan`, `apply`, `verify`, `report`.
 - [x] local LM Studio provider works.
 - [x] deterministic fallback works without LM Studio.
-- [ ] skill markdown files influence planning.
+- [x] skill markdown files influence planning.
 - [ ] batch approval by plan item ID works.
 - [ ] apply mode can make one safe low-risk edit.
 - [ ] patch sets and file changes are recorded.

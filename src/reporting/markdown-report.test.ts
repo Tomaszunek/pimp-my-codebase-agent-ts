@@ -166,6 +166,7 @@ void describe("createMarkdownReport", () => {
     assert.match(report.markdown, /item-dev-workflow/u);
     assert.match(report.markdown, /## Suggested Check Guards/u);
     assert.match(report.markdown, /pnpm typecheck/u);
+    assert.match(report.markdown, /## Verification Results/u);
     assert.match(report.markdown, /## Skipped And Ignored Paths/u);
     assert.match(report.markdown, /## Next Actions/u);
   });

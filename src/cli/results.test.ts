@@ -10,6 +10,8 @@ import { createDebugInfo } from "./debug-info.js";
 import { parseArguments } from "./parse-arguments.js";
 import { createResult } from "./results.js";
 
+const CLI_CHECK_TIMEOUT_SECONDS = 10;
+
 interface FixtureFile {
   readonly content: string;
   readonly path: string;
@@ -90,15 +92,15 @@ void describe("createResult", () => {
   });
 
   void it("returns not implemented for scaffolded commands", async () => {
-    const result = await createResultFor(["node", "cli", "verify", "--repo", "../logo"]);
+    const result = await createResultFor(["node", "cli", "apply", "--repo", "../logo"]);
 
     assert.equal(result.status, "not_implemented");
-    assert.equal(result.command, "verify");
+    assert.equal(result.command, "apply");
     assert.equal(result.repoPath, "../logo");
   });
 
   void it("includes debug info when requested", async () => {
-    const result = await createResultFor(["node", "cli", "verify", "--debug"]);
+    const result = await createResultFor(["node", "cli", "apply", "--debug"]);
 
     assert.equal(result.status, "not_implemented");
     assert.notEqual(result.debug, undefined);
@@ -178,6 +180,55 @@ void describe("createResult", () => {
       assert.match(await readUtf8File(latestPlanPath), /"skillGuidance"/u);
       assert.match(await readUtf8File(latestReportPath), /^# Pimp My Codebase Report/u);
       assert.match(await readUtf8File(latestReportPath), /## Skill Guidance/u);
+    } finally {
+      await removeFixture(fixtureRoot);
+    }
+  });
+
+  void it("runs configured check guards and persists verification artifacts", async () => {
+    const fixtureRoot = await createFixture([
+      {
+        content: JSON.stringify({
+          checks: [
+            {
+              command: `"${process.execPath}" -e "console.log('guard ok')"`,
+              id: "node-ok",
+              purpose: "custom",
+              timeoutSeconds: CLI_CHECK_TIMEOUT_SECONDS
+            }
+          ],
+          packageManager: "npm",
+          projectType: "node"
+        }),
+        path: ".pimp-my-codebase/config.json"
+      },
+      {
+        content: JSON.stringify({
+          name: "verify-fixture",
+          scripts: {}
+        }),
+        path: "package.json"
+      }
+    ]);
+
+    try {
+      const result = await createResultFor(["node", "cli", "verify", "--repo", fixtureRoot]);
+      const data = requireRecord(result.data);
+      const report = requireRecord(data.report);
+      const run = requireRecord(data.run);
+      const artifacts = requireRecord(run.artifacts);
+      const verification = requireRecord(data.verification);
+      const verificationPath = requireString(artifacts.verification);
+      const reportPath = requireString(report.path);
+
+      assert.equal(result.status, "ok");
+      assert.equal(result.command, "verify");
+      assert.equal(result.message, "Configured check guards completed.");
+      assert.equal(requireNumber(requireRecord(verification.summary).total), 1);
+      assert.match(await readUtf8File(verificationPath), /"checkGuardId": "node-ok"/u);
+      assert.match(await readUtf8File(verificationPath), /"stdoutSummary": "guard ok\\n"/u);
+      assert.match(await readUtf8File(reportPath), /## Verification Results/u);
+      assert.match(await readUtf8File(reportPath), /node-ok/u);
     } finally {
       await removeFixture(fixtureRoot);
     }

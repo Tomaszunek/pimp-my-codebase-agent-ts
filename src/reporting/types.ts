@@ -3,6 +3,7 @@ import type { ConfigLoadResult, ProjectConfig } from "../config/index.js";
 import type { AgentRun } from "../core/index.js";
 import type { PlanArtifact } from "../planning/index.js";
 import type { ProjectInventory } from "../project/index.js";
+import type { VerificationArtifact } from "../verification/index.js";
 
 export interface CreateMarkdownReportOptions {
   readonly config: ProjectConfig;
@@ -11,6 +12,7 @@ export interface CreateMarkdownReportOptions {
   readonly inventory: ProjectInventory;
   readonly planArtifact: PlanArtifact;
   readonly run: AgentRun;
+  readonly verificationArtifact?: VerificationArtifact;
 }
 
 export interface MarkdownReportArtifact {
@@ -23,4 +25,5 @@ export interface MarkdownReportSummary {
   readonly findingCount: number;
   readonly planItemCount: number;
   readonly skippedPathCount: number;
+  readonly verificationCount: number;
 }
