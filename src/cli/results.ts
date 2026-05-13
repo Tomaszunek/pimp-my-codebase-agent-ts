@@ -12,6 +12,7 @@ import { createRun, writeJsonArtifact, writeTextArtifact } from "../persistence/
 import { createImprovementPlan } from "../planning/index.js";
 import { scanProject } from "../project/index.js";
 import { createMarkdownReport } from "../reporting/index.js";
+import { loadSkills } from "../skills/index.js";
 import { isKnownCommand } from "./commands.js";
 
 export async function createResult(
@@ -112,10 +113,15 @@ export async function createResult(
       run: persistedRun,
       value: findingsArtifact
     });
+    const skillLoadResult = await loadSkills({
+      config: configLoadResult.config,
+      projectRootPath: inventory.project.rootPath
+    });
     const planArtifact = createImprovementPlan({
       createdAt: new Date(persistedRun.run.startedAt),
       findings: findingsArtifact.findings,
-      runId: persistedRun.run.id
+      runId: persistedRun.run.id,
+      skillLoadResult
     });
     const llmReview = await generateLlmPlanReview({
       config: configLoadResult.config.llm,
@@ -172,9 +178,10 @@ export async function createResult(
           latestArtifacts: persistedRun.latestArtifacts,
           latestPath: persistedRun.latestPath,
           path: persistedRun.runPath
-        }
+        },
+        skills: skillLoadResult
       },
-      message: "Project inventory, findings, improvement plan, and report created.",
+      message: "Project inventory, findings, skill-guided improvement plan, and report created.",
       repoPath,
     };
 

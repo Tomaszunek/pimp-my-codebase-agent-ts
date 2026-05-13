@@ -2,12 +2,14 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import type { Finding } from "../core/index.js";
+import type { SkillLoadResult } from "../skills/index.js";
 
 import { createImprovementPlan } from "./create-plan.js";
 
 const CREATED_AT = new Date("2026-05-12T12:00:00.000Z");
 const EXPECTED_PLAN_ITEM_COUNT = 3;
 const RUN_ID = "run-test";
+const TEST_SKILL_WEIGHT = 5;
 
 function createFinding(overrides: Partial<Finding> = {}): Finding {
   return {
@@ -91,5 +93,48 @@ void describe("createImprovementPlan", () => {
     assert.equal(artifact.plan.status, "proposed");
     assert.deepEqual(artifact.plan.items, []);
     assert.equal(artifact.summary.total, 0);
+  });
+
+  void it("uses loaded skill guidance to influence priority and acceptance criteria", () => {
+    const skillLoadResult: SkillLoadResult = {
+      loaded: [
+        {
+          allowedChangeTypes: ["testing"],
+          forbiddenChangeTypes: ["brittle snapshot churn"],
+          intent: "Favor tests.",
+          name: "test-booster",
+          preferredCheckGuards: ["test"],
+          preferredProjectSignals: ["vitest"],
+          reportSections: ["testing"],
+          scoringWeights: {
+            testing: TEST_SKILL_WEIGHT
+          },
+          source: "built-in"
+        }
+      ],
+      requested: ["test-booster"],
+      warnings: []
+    };
+    const artifact = createImprovementPlan({
+      createdAt: CREATED_AT,
+      findings: [
+        createFinding({
+          category: "testing",
+          id: "finding-tests",
+          severity: "low",
+          title: "No test setup detected"
+        })
+      ],
+      runId: RUN_ID,
+      skillLoadResult
+    });
+    const [planItem] = artifact.plan.items;
+
+    assert.ok(planItem);
+    assert.equal(planItem.priority, "medium");
+    assert.ok(artifact.skillGuidance);
+    assert.equal(artifact.skillGuidance.categoryWeights.testing, TEST_SKILL_WEIGHT);
+    assert.match(planItem.acceptanceCriteria.join("\n"), /Loaded skill guidance reviewed: test-booster/u);
+    assert.match(planItem.acceptanceCriteria.join("\n"), /Forbidden skill change types/u);
   });
 });

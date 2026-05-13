@@ -1,16 +1,19 @@
 import type { Finding, FindingCategory, ImprovementPlan, PlanItem } from "../core/index.js";
 import type { LlmPlanReview } from "../llm/index.js";
+import type { SkillLoadResult, SkillPlanGuidance } from "../skills/index.js";
 
 export interface CreateImprovementPlanOptions {
   readonly createdAt?: Date;
   readonly findings: readonly Finding[];
   readonly runId: string;
+  readonly skillLoadResult?: SkillLoadResult;
 }
 
 export interface PlanArtifact {
   readonly llmReview?: LlmPlanReview;
   readonly plan: ImprovementPlan;
   readonly runId: string;
+  readonly skillGuidance?: SkillPlanGuidance;
   readonly summary: PlanSummary;
 }
 
