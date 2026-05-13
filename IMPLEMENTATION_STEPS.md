@@ -312,8 +312,12 @@ Suggested built-in skills:
 
 Done when:
 
-- config can load skills by name
-- plan generation uses skill guidance
+- [x] config can load skills by name
+- [x] plan generation uses skill guidance
+
+Current note:
+
+- Built-in skill Markdown is parsed for `modernize`, `quality`, `frontend-polish`, `security-pass`, `test-booster`, and `architecture-cleanup`. Projects can override or add skills with `.pimp-my-codebase/skills/<name>.md`; the generated plan records compact skill guidance instead of full Markdown content.
 
 ## Step 11 - Implement Check Guards
 

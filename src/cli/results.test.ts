@@ -160,7 +160,7 @@ void describe("createResult", () => {
 
       assert.equal(result.status, "ok");
       assert.equal(result.command, "plan");
-      assert.equal(result.message, "Project inventory, findings, improvement plan, and report created.");
+      assert.equal(result.message, "Project inventory, findings, skill-guided improvement plan, and report created.");
       assert.ok(requireNumber(summary.total) > 0);
       assert.ok(requireNumber(planSummary.total) > 0);
       assert.ok(requireNumber(reportSummary.findingCount) > 0);
@@ -168,12 +168,16 @@ void describe("createResult", () => {
       assert.match(await readUtf8File(findingsPath), /"title": "Package manifest is missing guard scripts"/u);
       assert.match(await readUtf8File(inventoryPath), /"name": "result-fixture"/u);
       assert.match(await readUtf8File(planPath), /"status": "proposed"/u);
+      assert.match(await readUtf8File(planPath), /"skillGuidance"/u);
       assert.match(await readUtf8File(reportPath), /^# Pimp My Codebase Report/u);
+      assert.match(await readUtf8File(reportPath), /## Skill Guidance/u);
       assert.match(await readUtf8File(reportPath), /## Prioritized Plan/u);
       assert.match(await readUtf8File(latestFindingsPath), /"title": "Package manifest is missing guard scripts"/u);
       assert.match(await readUtf8File(latestInventoryPath), /"name": "result-fixture"/u);
       assert.match(await readUtf8File(latestPlanPath), /"status": "proposed"/u);
+      assert.match(await readUtf8File(latestPlanPath), /"skillGuidance"/u);
       assert.match(await readUtf8File(latestReportPath), /^# Pimp My Codebase Report/u);
+      assert.match(await readUtf8File(latestReportPath), /## Skill Guidance/u);
     } finally {
       await removeFixture(fixtureRoot);
     }

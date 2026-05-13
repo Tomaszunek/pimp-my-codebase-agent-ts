@@ -161,6 +161,7 @@ void describe("createMarkdownReport", () => {
     assert.match(report.markdown, /## Safety And Privacy Summary/u);
     assert.match(report.markdown, /## Findings By Category/u);
     assert.match(report.markdown, /Package manifest is missing guard scripts/u);
+    assert.match(report.markdown, /## Skill Guidance/u);
     assert.match(report.markdown, /## Prioritized Plan/u);
     assert.match(report.markdown, /item-dev-workflow/u);
     assert.match(report.markdown, /## Suggested Check Guards/u);

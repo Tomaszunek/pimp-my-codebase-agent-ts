@@ -141,6 +141,74 @@ function getPriorityWeight(priority: PlanItemPriority): number {
   throw new Error("Unknown plan item priority.");
 }
 
+function getSkillCategoryWeight(category: FindingCategory, options: CreateMarkdownReportOptions): number | undefined {
+  const { skillGuidance } = options.planArtifact;
+
+  if (skillGuidance === undefined) {
+    return undefined;
+  }
+
+  switch (category) {
+    case "accessibility": {
+      return skillGuidance.categoryWeights.accessibility;
+    }
+    case "architecture": {
+      return skillGuidance.categoryWeights.architecture;
+    }
+    case "correctness": {
+      return skillGuidance.categoryWeights.correctness;
+    }
+    case "developer_experience": {
+      return skillGuidance.categoryWeights.developer_experience;
+    }
+    case "documentation": {
+      return skillGuidance.categoryWeights.documentation;
+    }
+    case "maintainability": {
+      return skillGuidance.categoryWeights.maintainability;
+    }
+    case "modernization": {
+      return skillGuidance.categoryWeights.modernization;
+    }
+    case "performance": {
+      return skillGuidance.categoryWeights.performance;
+    }
+    case "security": {
+      return skillGuidance.categoryWeights.security;
+    }
+    case "testing": {
+      return skillGuidance.categoryWeights.testing;
+    }
+    case "ui_polish": {
+      return skillGuidance.categoryWeights.ui_polish;
+    }
+  }
+
+  throw new Error("Unknown finding category.");
+}
+
+function formatCategoryWeights(options: CreateMarkdownReportOptions): string {
+  const { skillGuidance } = options.planArtifact;
+
+  if (skillGuidance === undefined) {
+    return EMPTY_VALUE;
+  }
+
+  const parts: string[] = [];
+
+  for (const category of CATEGORY_ORDER) {
+    const weight = getSkillCategoryWeight(category, options);
+
+    if (weight === undefined) {
+      continue;
+    }
+
+    parts.push(`${formatCategory(category)}: ${weight}`);
+  }
+
+  return formatList(parts);
+}
+
 function getSeverityWeight(severity: FindingSeverity): number {
   switch (severity) {
     case "critical": {
@@ -438,6 +506,29 @@ function writeSkippedPaths(lines: string[], options: CreateMarkdownReportOptions
   );
 }
 
+function writeSkillGuidance(lines: string[], options: CreateMarkdownReportOptions): void {
+  const { skillGuidance } = options.planArtifact;
+
+  addSection(lines, "Skill Guidance");
+
+  if (skillGuidance === undefined) {
+    lines.push("No skill guidance was recorded for this run.");
+    return;
+  }
+
+  lines.push(
+    `- Requested skills: ${formatList(options.config.skills)}`,
+    `- Loaded skills: ${formatList(skillGuidance.loadedSkillNames)}`,
+    `- Preferred project signals: ${formatList(skillGuidance.preferredProjectSignals)}`,
+    `- Allowed change types: ${formatList(skillGuidance.allowedChangeTypes)}`,
+    `- Forbidden change types: ${formatList(skillGuidance.forbiddenChangeTypes)}`,
+    `- Preferred check guards: ${formatList(skillGuidance.preferredCheckGuards)}`,
+    `- Report sections: ${formatList(skillGuidance.reportSections.map((category) => formatCategory(category)))}`,
+    `- Category weights: ${formatCategoryWeights(options)}`,
+    `- Warnings: ${formatList(skillGuidance.warnings)}`
+  );
+}
+
 export function createMarkdownReport(options: CreateMarkdownReportOptions): MarkdownReportArtifact {
   const lines: string[] = [];
 
@@ -445,6 +536,7 @@ export function createMarkdownReport(options: CreateMarkdownReportOptions): Mark
   writeDetectedProjectFacts(lines, options);
   writePrivacySummary(lines, options);
   writeFindings(lines, options);
+  writeSkillGuidance(lines, options);
   writePlan(lines, options);
   writeLlmReview(lines, options);
   writeCheckGuards(lines, options);

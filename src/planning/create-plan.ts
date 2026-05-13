@@ -10,7 +10,10 @@ import type {
   PlanItemPriority,
   PlanItemRisk
 } from "../core/index.js";
+import type { SkillPlanGuidance } from "../skills/index.js";
 import type { CreateImprovementPlanOptions, PendingPlanItem, PlanArtifact, PlanGroup, PlanSummary } from "./types.js";
+
+import { createSkillPlanGuidance } from "../skills/index.js";
 
 const CONTENT_HASH_ALGORITHM = "sha256";
 const DEFAULT_CREATED_AT = new Date("1970-01-01T00:00:00.000Z");
@@ -20,6 +23,7 @@ const LARGE_GROUP_SIZE = 4;
 const MEDIUM_GROUP_SIZE = 2;
 const PRIORITY_CRITICAL_WEIGHT = 4;
 const PRIORITY_HIGH_WEIGHT = 3;
+const SKILL_PRIORITY_BOOST_WEIGHT = 4;
 const SEVERITY_CRITICAL_WEIGHT = 5;
 const SEVERITY_HIGH_WEIGHT = 4;
 const SEVERITY_MEDIUM_WEIGHT = 3;
@@ -176,6 +180,98 @@ function getPriorityWeight(priority: PlanItemPriority): number {
   throw new Error("Unknown plan item priority.");
 }
 
+function getSkillCategoryWeight(category: FindingCategory, skillGuidance: SkillPlanGuidance | undefined): number {
+  if (skillGuidance === undefined) {
+    return 0;
+  }
+
+  switch (category) {
+    case "accessibility": {
+      return skillGuidance.categoryWeights.accessibility ?? 0;
+    }
+    case "architecture": {
+      return skillGuidance.categoryWeights.architecture ?? 0;
+    }
+    case "correctness": {
+      return skillGuidance.categoryWeights.correctness ?? 0;
+    }
+    case "developer_experience": {
+      return skillGuidance.categoryWeights.developer_experience ?? 0;
+    }
+    case "documentation": {
+      return skillGuidance.categoryWeights.documentation ?? 0;
+    }
+    case "maintainability": {
+      return skillGuidance.categoryWeights.maintainability ?? 0;
+    }
+    case "modernization": {
+      return skillGuidance.categoryWeights.modernization ?? 0;
+    }
+    case "performance": {
+      return skillGuidance.categoryWeights.performance ?? 0;
+    }
+    case "security": {
+      return skillGuidance.categoryWeights.security ?? 0;
+    }
+    case "testing": {
+      return skillGuidance.categoryWeights.testing ?? 0;
+    }
+    case "ui_polish": {
+      return skillGuidance.categoryWeights.ui_polish ?? 0;
+    }
+  }
+
+  throw new Error("Unknown finding category.");
+}
+
+function getSkillAdjustedPriority(
+  priority: PlanItemPriority,
+  category: FindingCategory,
+  skillGuidance: SkillPlanGuidance | undefined
+): PlanItemPriority {
+  if (getSkillCategoryWeight(category, skillGuidance) < SKILL_PRIORITY_BOOST_WEIGHT) {
+    return priority;
+  }
+
+  switch (priority) {
+    case "critical":
+    case "high": {
+      return priority;
+    }
+    case "low": {
+      return "medium";
+    }
+    case "medium": {
+      return "high";
+    }
+  }
+
+  throw new Error("Unknown plan item priority.");
+}
+
+function getSkillAcceptanceCriteria(category: FindingCategory, skillGuidance: SkillPlanGuidance | undefined): readonly string[] {
+  if (skillGuidance === undefined || skillGuidance.loadedSkillNames.length === 0) {
+    return [];
+  }
+
+  const criteria = [`Loaded skill guidance reviewed: ${skillGuidance.loadedSkillNames.join(", ")}.`];
+  const categoryWeight = getSkillCategoryWeight(category, skillGuidance);
+
+  if (categoryWeight >= SKILL_PRIORITY_BOOST_WEIGHT) {
+    criteria.push(`Skill scoring prioritizes ${category.replaceAll("_", " ")} with weight ${categoryWeight}.`);
+  }
+
+  if (skillGuidance.forbiddenChangeTypes.length > 0) {
+    criteria.push(`Forbidden skill change types stay out of scope: ${skillGuidance.forbiddenChangeTypes.join(", ")}.`);
+  }
+
+  if (skillGuidance.preferredCheckGuards.length > 0) {
+    criteria.push(`Preferred skill check guards are considered: ${skillGuidance.preferredCheckGuards.join(", ")}.`);
+  }
+
+  return criteria;
+}
+
 function getSeverityWeight(severity: FindingSeverity): number {
   switch (severity) {
     case "critical": {
@@ -202,11 +298,18 @@ function comparePlanGroups(firstGroup: PlanGroup, secondGroup: PlanGroup): numbe
   return getCategoryRank(firstGroup.key) - getCategoryRank(secondGroup.key);
 }
 
-function comparePlanItems(firstItem: PlanItem, secondItem: PlanItem): number {
+function comparePlanItems(firstItem: PlanItem, secondItem: PlanItem, skillGuidance: SkillPlanGuidance | undefined): number {
   const priorityDifference = getPriorityWeight(secondItem.priority) - getPriorityWeight(firstItem.priority);
 
   if (priorityDifference !== 0) {
     return priorityDifference;
+  }
+
+  const skillWeightDifference =
+    getSkillCategoryWeight(secondItem.category, skillGuidance) - getSkillCategoryWeight(firstItem.category, skillGuidance);
+
+  if (skillWeightDifference !== 0) {
+    return skillWeightDifference;
   }
 
   const categoryDifference = getCategoryRank(firstItem.category) - getCategoryRank(secondItem.category);
@@ -351,12 +454,12 @@ function incrementCount(counts: Map<string, number>, key: PlanItemPriority | Pla
   counts.set(key, (counts.get(key) ?? 0) + 1);
 }
 
-function mapGroupToPendingPlanItem(group: PlanGroup): PendingPlanItem {
+function mapGroupToPendingPlanItem(group: PlanGroup, skillGuidance: SkillPlanGuidance | undefined): PendingPlanItem {
   const { key: category } = group;
-  const priority = getPlanItemPriority(group.findings);
+  const priority = getSkillAdjustedPriority(getPlanItemPriority(group.findings), category, skillGuidance);
 
   return {
-    acceptanceCriteria: getAcceptanceCriteria(category),
+    acceptanceCriteria: [...getAcceptanceCriteria(category), ...getSkillAcceptanceCriteria(category, skillGuidance)],
     category,
     effort: getPlanItemEffort(group.findings),
     findingIds: group.findings.map((finding) => finding.id),
@@ -366,10 +469,10 @@ function mapGroupToPendingPlanItem(group: PlanGroup): PendingPlanItem {
   };
 }
 
-function sortPlanItems(planItems: readonly PlanItem[]): readonly PlanItem[] {
+function sortPlanItems(planItems: readonly PlanItem[], skillGuidance: SkillPlanGuidance | undefined): readonly PlanItem[] {
   const sortedPlanItems = [...planItems];
 
-  sortedPlanItems.sort(comparePlanItems);
+  sortedPlanItems.sort((firstItem, secondItem) => comparePlanItems(firstItem, secondItem, skillGuidance));
 
   return sortedPlanItems;
 }
@@ -392,9 +495,12 @@ function summarizePlan(planItems: readonly PlanItem[]): PlanSummary {
 
 export function createImprovementPlan(options: CreateImprovementPlanOptions): PlanArtifact {
   const createdAt = options.createdAt ?? DEFAULT_CREATED_AT;
+  const skillGuidance =
+    options.skillLoadResult === undefined ? undefined : createSkillPlanGuidance(options.skillLoadResult);
   const planId = createPlanId(options.runId, options.findings);
   const items = sortPlanItems(
-    groupFindings(options.findings).map((group) => createPlanItem(planId, mapGroupToPendingPlanItem(group)))
+    groupFindings(options.findings).map((group) => createPlanItem(planId, mapGroupToPendingPlanItem(group, skillGuidance))),
+    skillGuidance
   );
   const plan: ImprovementPlan = {
     createdAt: createdAt.toISOString(),
@@ -403,10 +509,18 @@ export function createImprovementPlan(options: CreateImprovementPlanOptions): Pl
     runId: options.runId,
     status: "proposed"
   };
-
-  return {
+  const artifact: PlanArtifact = {
     plan,
     runId: options.runId,
     summary: summarizePlan(items)
+  };
+
+  if (skillGuidance === undefined) {
+    return artifact;
+  }
+
+  return {
+    ...artifact,
+    skillGuidance
   };
 }
